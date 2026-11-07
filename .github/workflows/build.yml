@@ -27,7 +27,11 @@ jobs:
       - uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
-          cache: ${{ hashFiles('go.sum') != '' }}
+          cache: true
+          cache-dependency-path: |
+            go.mod
+            go.sum
+            .github/workflows/build.yml
       - run: go mod download && go mod verify
       - name: Build and detect executable
         id: build

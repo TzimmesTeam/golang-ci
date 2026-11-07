@@ -5,9 +5,10 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG MAIN_PACKAGE=.
 WORKDIR /src
+COPY go.mod go.sum* ./
+RUN go mod download
 COPY . .
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -mod=readonly -trimpath -buildvcs=false -ldflags="-s -w" -o /out/app "$MAIN_PACKAGE"
 

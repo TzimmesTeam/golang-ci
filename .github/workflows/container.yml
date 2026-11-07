@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 defaults:
   run:
@@ -22,6 +21,10 @@ jobs:
   container:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: docker/setup-buildx-action@v4.4.1
@@ -29,24 +32,18 @@ jobs:
         env:
           REPOSITORY: ${{ github.repository }}
         run: echo "name=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-      - if: startsWith(github.ref, 'refs/tags/')
-        uses: docker/login-action@v4.8.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v7.4.0
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ startsWith(github.ref, 'refs/tags/') }}
+          platforms: linux/${{ matrix.arch }}
+          push: false
           tags: ${{ steps.image.outputs.name }}:${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
           build-args: |
             GO_VERSION=${{ inputs.go-version }}
             MAIN_PACKAGE=${{ inputs.main-package }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: mode=min
-          sbom: true
+          cache-from: type=gha,scope=container-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=container-${{ matrix.arch }}
+          provenance: false
+          sbom: false
 

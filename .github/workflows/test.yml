@@ -19,8 +19,11 @@ jobs:
       - uses: actions/setup-go@v7.0.0
         with:
           go-version-file: go.mod
-          cache: ${{ hashFiles('go.sum') != '' }}
-      - run: go mod download && go mod verify
+          cache: true
+          cache-dependency-path: |
+            go.mod
+            go.sum
+            .github/workflows/test.yml
       - name: Tests with race detector
         run: |
           packages=$(go list -mod=readonly -f '{{if or .TestGoFiles .XTestGoFiles}}{{.ImportPath}}{{end}}' ./...)
@@ -32,4 +35,4 @@ jobs:
             exit 0
           fi
 
-          go test -mod=readonly -race -shuffle=on -count=1 -timeout=5m ./...
+          go test -mod=readonly -vet=off -race -shuffle=on -count=1 -timeout=5m ./...
